@@ -166,24 +166,6 @@
                 document.getElementById('renderedContent').innerHTML = data.html;
 
                 // Add listener for raw content changes
-                document.getElementById('rawContent').addEventListener('input', function() {
-                    const rawContent = this.value;
-                    fetch('/scrape', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            raw_content: rawContent
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('renderedContent').innerHTML = data.html;
-                    })
-                    .catch(error => console.error('Error:', error));
-                });
-                
             } catch (error) {
                 alert('Error: ' + error.message);
             }
@@ -191,6 +173,25 @@
 
         // Show initial provider options
         document.querySelector(`[data-provider="${document.getElementById('provider').value}"]`).style.display = 'block';
+
+        // Add listener for raw content changes
+        document.getElementById('rawContent').addEventListener('input', function() {
+            const rawContent = this.value;
+            fetch('/scrape', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    raw_content: rawContent
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('renderedContent').innerHTML = data.html;
+            })
+            .catch(error => console.error('Error:', error));
+        });
     </script>
 </body>
 </html>
