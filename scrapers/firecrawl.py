@@ -6,7 +6,7 @@ from .base import BaseScraper
 class FirecrawlScraper(BaseScraper):
     """Firecrawl API implementation"""
     
-    FIRECRAWL_API_ENDPOINT = "https://api.firecrawl.io/scrape"
+    FIRECRAWL_API_ENDPOINT = "https://api.firecrawl.dev/v1/scrape"
     
     def __init__(self, timeout: float = 30.0):
         self.timeout = timeout
@@ -29,6 +29,23 @@ class FirecrawlScraper(BaseScraper):
                 "default": True,
                 "help": "Only return the main content excluding headers, navs, footers, etc"
             },
+            "includeTags": {
+                "type": "array",
+                "items": {"type": "string"},
+                "default": [],
+                "help": "HTML tags to include in the output"
+            },
+            "excludeTags": {
+                "type": "array",
+                "items": {"type": "string"},
+                "default": [],
+                "help": "HTML tags to exclude from the output"
+            },
+            "headers": {
+                "type": "object",
+                "default": {},
+                "help": "Custom headers to send with the request"
+            },
             "waitFor": {
                 "type": "number",
                 "default": 0,
@@ -42,27 +59,47 @@ class FirecrawlScraper(BaseScraper):
             "country": {
                 "type": "string",
                 "default": "US",
-                "help": "ISO 3166-1 alpha-2 country code (e.g., 'US', 'AU', 'DE', 'JP')"
+                "help": "ISO 3166-1 alpha-2 country code"
+            },
+            "languages": {
+                "type": "array",
+                "items": {"type": "string"},
+                "default": ["en-US"],
+                "help": "Preferred languages for the request"
             }
         }
 
     def fetch(self, url: str, **options) -> str:
-        params = {
-            "api_key": os.environ["FIRECRAWL_API_KEY"],
+        payload = {
             "url": url,
             "skipTlsVerification": options.get("skipTlsVerification", False),
             "formats": [options.get("formats", "markdown")],
             "onlyMainContent": options.get("onlyMainContent", True),
-            "waitFor": options.get("waitFor", 0),
-            "timeout": options.get("timeout", 30000),
+            #"includeTags": options.get("includeTags", []),
+            #"excludeTags": options.get("excludeTags", []),
+            #"headers": options.get("headers", {}),
+            "waitFor": int(options.get("waitFor", 0)),
+            "timeout": int(options.get("timeout", 30000)),
             "location": {
-                "country": options.get("country", "US")
+                "country": options.get("country", "US"),
+                "languages": (
+                    options.get("languages", ["en-US"]) 
+                    if isinstance(options.get("languages"), list)
+                    else ["en-US"]
+                )
             }
         }
         
+        headers = {
+            "Authorization": f"Bearer {os.environ['FIRECRAWL_API_KEY']}",
+            "Content-Type": "application/json"
+        }
+        
+        print(f"POST request payload: {payload} -- headers: {headers}")
         resp = requests.post(
             self.FIRECRAWL_API_ENDPOINT,
-            json=params,
+            json=payload,
+            headers=headers,
             timeout=self.timeout
         )
         resp.raise_for_status()
