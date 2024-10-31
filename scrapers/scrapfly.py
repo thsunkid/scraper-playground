@@ -10,7 +10,7 @@ class ScrapflyScraper(BaseScraper):
     
     SCRAPFLY_API_ENDPOINT = "https://api.scrapfly.io/scrape"
     
-    def __init__(self, timeout: float = 30.0):
+    def __init__(self, timeout: float = 60):
         self.timeout = timeout
 
     def get_options_schema(self) -> Dict[str, Any]:
@@ -43,7 +43,7 @@ class ScrapflyScraper(BaseScraper):
         params = {
             "key": os.environ["SCRAPFLY_API_KEY"],
             "url": url,
-            "render_js": options.get("render_js", False),
+            "render_js": "true" if options.get("render_js", False) else "false",
             "proxy_pool": "public_residential_pool" 
                 if options.get("proxy_pool") == "residential"
                 else "public_datacenter_pool",
