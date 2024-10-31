@@ -64,8 +64,12 @@
                                 {% elif details.type == 'select' %}
                                 <select class="form-select" id="{{ provider }}_{{ name }}" name="{{ name }}">
                                     {% for option in details.options %}
-                                    <option value="{{ option }}" 
-                                            {% if details.default is defined and details.default is not none and option|string == details.default|string %}selected{% endif %}>
+                                    <option value="{{ option }}"
+                                            {% if details.default is defined and 
+                                                  details.default is not none and 
+                                                  option|string == details.default|string %}
+                                            selected
+                                            {% endif %}>
                                         {{ option }}
                                     </option>
                                     {% endfor %}
