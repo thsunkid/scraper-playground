@@ -29,6 +29,16 @@ def scrape():
     """Handle scraping requests"""
     try:
         data = request.json
+        
+        # Handle raw content update
+        if 'raw_content' in data:
+            html_content = markdown.markdown(data['raw_content'])
+            return jsonify({
+                "raw": data['raw_content'],
+                "html": html_content
+            })
+            
+        # Handle scraping request
         url = data.get('url')
         provider = data.get('provider')
         options = data.get('options', {})
