@@ -1,13 +1,15 @@
 import os
 from flask import Flask, render_template, request, jsonify
 from scrapers.scrapfly import ScrapflyScraper
+from scrapers.firecrawl import FirecrawlScraper
 import markdown
 
 app = Flask(__name__)
 
 # Initialize scrapers
 SCRAPERS = {
-    "scrapfly": ScrapflyScraper()
+    "scrapfly": ScrapflyScraper(),
+    "firecrawl": FirecrawlScraper()
 }
 
 @app.route('/')
