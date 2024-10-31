@@ -1,8 +1,8 @@
-# Web Scraping Service
+# Web Scraping Playground
 
-A flexible web scraping service that supports multiple scraping providers including Firecrawl and Scrapfly.
+A flexible web scraping playground that supports Markdown rendering. 
 
-![Architecture Diagram](assets/images/architecture.png)
+![Playground UI](assets/images/playground-ui.png)
 
 ## Quick Start
 
@@ -28,12 +28,4 @@ export SCRAPFLY_API_KEY=your_api_key
 python app.py
 ```
 
-## Features
 
-- Multiple scraping provider support
-- Abstract base class for easy provider integration
-- Simple REST API interface
-
-## License
-
-MIT
