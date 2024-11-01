@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify
 from scrapers.scrapfly import ScrapflyScraper
 from scrapers.firecrawl import FirecrawlScraper
 import markdown
+from markdownify import markdownify
 
 app = Flask(__name__)
 
@@ -55,7 +56,6 @@ def scrape():
         
         # Convert HTML to markdown if needed
         if content.strip().startswith('<'):
-            from markdownify import markdownify
             content = markdownify(content)
             
         # Convert markdown to HTML for preview

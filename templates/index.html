@@ -11,6 +11,31 @@
             color: #6c757d;
             margin-left: 4px;
         }
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            z-index: 1000;
+        }
+        .loading .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .alert-error {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1100;
+            min-width: 300px;
+        }
         .result-panel {
             height: 700px;
             overflow-y: auto;
@@ -33,6 +58,18 @@
 </head>
 <body>
     <div class="container mt-4">
+        <div id="errorAlert" class="alert alert-danger alert-error" role="alert">
+            <span id="errorMessage"></span>
+            <button type="button" class="btn-close" aria-label="Close"></button>
+        </div>
+        
+        <div id="loadingOverlay" class="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="mt-2">Scraping in progress...</div>
+        </div>
+        
         <h1>Web Scraper Playground</h1>
         
         <div class="row mt-4">
@@ -69,8 +106,7 @@
                                 {% elif details.type == 'select' %}
                                 <select class="form-select" id="{{ provider }}_{{ name }}" name="{{ name }}">
                                     {% for option in details.options %}
-                                    <option value="{{ option }}"
-                                            {% if details.default is defined and details.default == option %}selected{% endif %}>
+                                    <option value="{{ option }}" {% if details.default is defined and option == details.default %}selected{% endif %}>
                                         {{ option }}
                                     </option>
                                     {% endfor %}
@@ -148,6 +184,9 @@
                 }
             });
 
+            // Show loading overlay
+            document.getElementById('loadingOverlay').style.display = 'block';
+            
             try {
                 const response = await fetch('/scrape', {
                     method: 'POST',
@@ -169,11 +208,20 @@
                 
                 document.getElementById('rawContent').value = data.raw;
                 document.getElementById('renderedContent').innerHTML = data.html;
-
-                // Add listener for raw content changes
             } catch (error) {
-                alert('Error: ' + error.message);
+                const errorAlert = document.getElementById('errorAlert');
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.textContent = error.message;
+                errorAlert.style.display = 'block';
+            } finally {
+                // Hide loading overlay
+                document.getElementById('loadingOverlay').style.display = 'none';
             }
+        });
+
+        // Setup error alert close button
+        document.querySelector('#errorAlert .btn-close').addEventListener('click', function() {
+            document.getElementById('errorAlert').style.display = 'none';
         });
 
         // Show initial provider options
