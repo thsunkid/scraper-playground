@@ -29,23 +29,6 @@ class FirecrawlScraper(BaseScraper):
                 "default": True,
                 "help": "Only return the main content excluding headers, navs, footers, etc"
             },
-            "includeTags": {
-                "type": "array",
-                "items": {"type": "string"},
-                "default": [],
-                "help": "HTML tags to include in the output"
-            },
-            "excludeTags": {
-                "type": "array",
-                "items": {"type": "string"},
-                "default": [],
-                "help": "HTML tags to exclude from the output"
-            },
-            "headers": {
-                "type": "object",
-                "default": {},
-                "help": "Custom headers to send with the request"
-            },
             "waitFor": {
                 "type": "number",
                 "default": 0,
@@ -75,9 +58,6 @@ class FirecrawlScraper(BaseScraper):
             "skipTlsVerification": options.get("skipTlsVerification", False),
             "formats": [options.get("formats", "markdown")],
             "onlyMainContent": options.get("onlyMainContent", True),
-            #"includeTags": options.get("includeTags", []),
-            #"excludeTags": options.get("excludeTags", []),
-            #"headers": options.get("headers", {}),
             "waitFor": int(options.get("waitFor", 0)),
             "timeout": int(options.get("timeout", 30000)),
             "location": {
@@ -95,7 +75,6 @@ class FirecrawlScraper(BaseScraper):
             "Content-Type": "application/json"
         }
         
-        print(f"POST request payload: {payload} -- headers: {headers}")
         resp = requests.post(
             self.FIRECRAWL_API_ENDPOINT,
             json=payload,

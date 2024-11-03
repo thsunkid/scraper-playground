@@ -106,7 +106,7 @@
                                 {% elif details.type == 'select' %}
                                 <select class="form-select" id="{{ provider }}_{{ name }}" name="{{ name }}">
                                     {% for option in details.options %}
-                                    <option value="{{ option }}" {% if details.default is defined and option == details.default %}selected{% endif %}>
+                                    <option value="{{ option }}" {% if details.get('default') == option %}selected{% endif %}>
                                         {{ option }}
                                     </option>
                                     {% endfor %}
@@ -153,13 +153,34 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function updateScreenshotFlagsVisibility() {
+            const provider = document.getElementById('provider').value;
+            const screenshotCheckbox = document.querySelector(`[data-provider="${provider}"] [name="screenshot"]`);
+            const screenshotFlagInputs = document.querySelectorAll(`[data-provider="${provider}"] [name^="screenshot_"]`);
+            
+            screenshotFlagInputs.forEach(input => {
+                if (input.name === "screenshot_full_page") return; // Skip the full page option
+                const parentDiv = input.closest('.mb-3');
+                parentDiv.style.display = screenshotCheckbox.checked ? 'block' : 'none';
+            });
+        }
+
         // Show options for selected provider
         document.getElementById('provider').addEventListener('change', function() {
             document.querySelectorAll('.provider-options').forEach(el => {
                 el.style.display = 'none';
             });
             document.querySelector(`[data-provider="${this.value}"]`).style.display = 'block';
+            updateScreenshotFlagsVisibility();
         });
+
+        // Add listener for screenshot checkbox changes
+        document.querySelectorAll('[name="screenshot"]').forEach(checkbox => {
+            checkbox.addEventListener('change', updateScreenshotFlagsVisibility);
+        });
+
+        // Initial visibility check
+        updateScreenshotFlagsVisibility();
 
         // Initialize tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('.help-tooltip'))
