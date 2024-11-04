@@ -24,3 +24,9 @@ def resolve_relative_images(content: str, base_url: str) -> str:
 
     pattern = r"!\[(.*?)\]\((.*?)\)"
     return re.sub(pattern, replace_image_url, content)
+
+
+def remove_duplicate_images(content: str) -> str:
+    """Remove consecutive duplicate images that have the same description"""
+    pattern = r"(!\[(.*?)\]\([^)]+\))\s*!\[\2\]\([^)]+\)"
+    return re.sub(pattern, r"\1", content)

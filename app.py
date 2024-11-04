@@ -4,7 +4,11 @@ from scrapers.firecrawl import FirecrawlScraper
 import markdown
 from markdownify import markdownify
 
-from utils.markdown_utils import get_redirected_url, resolve_relative_images
+from utils.markdown_utils import (
+    get_redirected_url,
+    resolve_relative_images,
+    remove_duplicate_images,
+)
 
 app = Flask(__name__)
 
@@ -61,6 +65,8 @@ def scrape():
         final_url = get_redirected_url(url)
         # Resolve relative image paths
         content = resolve_relative_images(content, final_url)
+        # Remove duplicate consecutive images
+        content = remove_duplicate_images(content)
 
         # Convert markdown to HTML for preview
         html_content = markdown.markdown(content)
