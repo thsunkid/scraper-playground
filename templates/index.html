@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Web Scraper Playground</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -11,6 +12,7 @@
             color: #6c757d;
             margin-left: 4px;
         }
+
         .loading {
             display: none;
             position: absolute;
@@ -23,10 +25,12 @@
             text-align: center;
             z-index: 1000;
         }
+
         .loading .spinner-border {
             width: 3rem;
             height: 3rem;
         }
+
         .alert-error {
             display: none;
             position: fixed;
@@ -36,15 +40,18 @@
             z-index: 1100;
             min-width: 300px;
         }
+
         .result-panel {
             height: 700px;
             overflow-y: auto;
         }
+
         #renderedContent {
             resize: both;
             min-height: 700px;
             max-height: none;
         }
+
         #rawContent {
             width: 100%;
             height: 100%;
@@ -56,22 +63,23 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container mt-4">
         <div id="errorAlert" class="alert alert-danger alert-error" role="alert">
             <span id="errorMessage"></span>
             <button type="button" class="btn-close" aria-label="Close"></button>
         </div>
-        
+
         <div id="loadingOverlay" class="loading">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
             <div class="mt-2">Scraping in progress...</div>
         </div>
-        
+
         <h1>Web Scraper Playground</h1>
-        
+
         <div class="row mt-4">
             <div class="col-md-4">
                 <form id="scrapeForm">
@@ -90,32 +98,33 @@
                         {% for provider, schema in scraper_options.items() %}
                         <div class="provider-options" data-provider="{{ provider }}" style="display: none;">
                             {% for name, details in schema.items() %}
-                            <div class="mb-3">
+                            <div class="mb-3"
+                                data-depends-on='{{ details.depends_on | tojson | safe if details.depends_on else '' }}'
+                                style="display: {% if details.depends_on %}none{% else %}block{% endif %}">
                                 <label for="{{ provider }}_{{ name }}" class="form-label">
                                     {{ name|replace('_', ' ')|title }}
                                     <i class="help-tooltip bi bi-question-circle" title="{{ details.help }}"></i>
                                 </label>
-                                
+
                                 {% if details.type == 'boolean' %}
                                 <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" 
-                                           id="{{ provider }}_{{ name }}"
-                                           name="{{ name }}"
-                                           {% if details.default %}checked{% endif %}>
+                                    <input type="checkbox" class="form-check-input option-input"
+                                        id="{{ provider }}_{{ name }}" name="{{ name }}" {% if details.default
+                                        %}checked{% endif %}>
                                 </div>
                                 {% elif details.type == 'select' %}
-                                <select class="form-select" id="{{ provider }}_{{ name }}" name="{{ name }}">
+                                <select class="form-select option-input" id="{{ provider }}_{{ name }}"
+                                    name="{{ name }}">
                                     {% for option in details.options %}
-                                    <option value="{{ option }}" {% if details.get('default') == option %}selected{% endif %}>
+                                    <option value="{{ option }}" {% if details.default is defined and
+                                        details.default==option %}selected{% endif %}>
                                         {{ option }}
                                     </option>
                                     {% endfor %}
                                 </select>
                                 {% else %}
-                                <input type="{{ details.type }}" class="form-control"
-                                       id="{{ provider }}_{{ name }}"
-                                       name="{{ name }}"
-                                       value="{{ details.default }}">
+                                <input type="{{ details.type }}" class="form-control option-input"
+                                    id="{{ provider }}_{{ name }}" name="{{ name }}" value="{{ details.default }}">
                                 {% endif %}
                             </div>
                             {% endfor %}
@@ -140,7 +149,7 @@
                         <h4>Raw Content</h4>
                         <textarea class="result-panel border" id="rawContent" spellcheck="false"></textarea>
                     </div>
-                    
+
                     <!-- Rendered Content -->
                     <div class="col-md-6">
                         <h4>Rendered Content</h4>
@@ -153,34 +162,75 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function updateScreenshotFlagsVisibility() {
+        function updateOptionVisibility() {
             const provider = document.getElementById('provider').value;
-            const screenshotCheckbox = document.querySelector(`[data-provider="${provider}"] [name="screenshot"]`);
-            const screenshotFlagInputs = document.querySelectorAll(`[data-provider="${provider}"] [name^="screenshot_"]`);
-            
-            screenshotFlagInputs.forEach(input => {
-                if (input.name === "screenshot_full_page") return; // Skip the full page option
-                const parentDiv = input.closest('.mb-3');
-                parentDiv.style.display = screenshotCheckbox.checked ? 'block' : 'none';
-            });
-        }
+            const providerOptions = document.querySelector(`[data-provider="${provider}"]`);
 
-        // Show options for selected provider
-        document.getElementById('provider').addEventListener('change', function() {
+            // First hide all provider options
             document.querySelectorAll('.provider-options').forEach(el => {
                 el.style.display = 'none';
             });
-            document.querySelector(`[data-provider="${this.value}"]`).style.display = 'block';
-            updateScreenshotFlagsVisibility();
-        });
 
-        // Add listener for screenshot checkbox changes
-        document.querySelectorAll('[name="screenshot"]').forEach(checkbox => {
-            checkbox.addEventListener('change', updateScreenshotFlagsVisibility);
-        });
+            // Show current provider's options container
+            if (providerOptions) {
+                providerOptions.style.display = 'block';
 
-        // Initial visibility check
-        updateScreenshotFlagsVisibility();
+                // Handle dependencies for all options
+                const dependentDivs = providerOptions.querySelectorAll('[data-depends-on]');
+                dependentDivs.forEach(optionDiv => {
+                    const dependsOnStr = optionDiv.dataset.dependsOn;
+                    if (!dependsOnStr) return;
+
+                    try {
+                        const dependencies = JSON.parse(dependsOnStr);
+                        let shouldShow = true;
+
+                        for (const [depName, requiredValue] of Object.entries(dependencies)) {
+                            const depInput = document.getElementById(`${provider}_${depName}`);
+                            if (!depInput) {
+                                shouldShow = false;
+                                break;
+                            }
+
+                            const currentValue = depInput.type === 'checkbox'
+                                ? depInput.checked
+                                : depInput.value;
+
+                            if (depInput.type === 'checkbox') {
+                                if (currentValue !== requiredValue) {
+                                    shouldShow = false;
+                                    break;
+                                }
+                            } else {
+                                if (String(currentValue) !== String(requiredValue)) {
+                                    shouldShow = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        optionDiv.style.display = shouldShow ? 'block' : 'none';
+                    } catch (e) {
+                        console.error('Error parsing dependencies:', e);
+                        console.error('Dependencies string:', dependsOnStr);
+                    }
+                });
+            }
+        }
+
+        // Show options for selected provider
+        document.getElementById('provider').addEventListener('change', updateOptionVisibility);
+
+        // Wait until the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // Add listeners for all option inputs
+            document.querySelectorAll('.option-input').forEach(input => {
+                input.addEventListener('change', updateOptionVisibility);
+            });
+
+            // Initial visibility check on page load
+            updateOptionVisibility();
+        });
 
         // Initialize tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('.help-tooltip'))
@@ -189,13 +239,13 @@
         });
 
         // Handle form submission
-        document.getElementById('scrapeForm').addEventListener('submit', async function(e) {
+        document.getElementById('scrapeForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
             const provider = document.getElementById('provider').value;
             const optionsDiv = document.querySelector(`[data-provider="${provider}"]`);
             const options = {};
-            
+
             // Collect all input values
             optionsDiv.querySelectorAll('input, select').forEach(input => {
                 if (input.type === 'checkbox') {
@@ -207,7 +257,7 @@
 
             // Show loading overlay
             document.getElementById('loadingOverlay').style.display = 'block';
-            
+
             try {
                 const response = await fetch('/scrape', {
                     method: 'POST',
@@ -220,13 +270,13 @@
                         options: options
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.error) {
                     throw new Error(data.error);
                 }
-                
+
                 document.getElementById('rawContent').value = data.raw;
                 document.getElementById('renderedContent').innerHTML = data.html;
             } catch (error) {
@@ -241,7 +291,7 @@
         });
 
         // Setup error alert close button
-        document.querySelector('#errorAlert .btn-close').addEventListener('click', function() {
+        document.querySelector('#errorAlert .btn-close').addEventListener('click', function () {
             document.getElementById('errorAlert').style.display = 'none';
         });
 
@@ -249,7 +299,7 @@
         document.querySelector(`[data-provider="${document.getElementById('provider').value}"]`).style.display = 'block';
 
         // Add listener for raw content changes
-        document.getElementById('rawContent').addEventListener('input', function() {
+        document.getElementById('rawContent').addEventListener('input', function () {
             const rawContent = this.value;
             fetch('/scrape', {
                 method: 'POST',
@@ -260,12 +310,13 @@
                     raw_content: rawContent
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('renderedContent').innerHTML = data.html;
-            })
-            .catch(error => console.error('Error:', error));
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('renderedContent').innerHTML = data.html;
+                })
+                .catch(error => console.error('Error:', error));
         });
     </script>
 </body>
+
 </html>
