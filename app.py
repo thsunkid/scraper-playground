@@ -1,11 +1,13 @@
-import os
 from flask import Flask, render_template, request, jsonify
 from scrapers.scrapfly import ScrapflyScraper
 from scrapers.firecrawl import FirecrawlScraper
 import markdown
 from markdownify import markdownify
 
+from utils.markdown_utils import get_redirected_url, resolve_relative_images
+
 app = Flask(__name__)
+
 
 # Initialize scrapers
 SCRAPERS = {"scrapfly": ScrapflyScraper(), "firecrawl": FirecrawlScraper()}
@@ -28,6 +30,8 @@ def scrape():
     """Handle scraping requests"""
     try:
         data = request.json
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
 
         # Handle raw content update
         if "raw_content" in data:
@@ -52,6 +56,11 @@ def scrape():
         # Convert HTML to markdown if needed
         if content.strip().startswith("<"):
             content = markdownify(content, heading_style="atx")
+
+        # Get final URL after redirects
+        final_url = get_redirected_url(url)
+        # Resolve relative image paths
+        content = resolve_relative_images(content, final_url)
 
         # Convert markdown to HTML for preview
         html_content = markdown.markdown(content)
