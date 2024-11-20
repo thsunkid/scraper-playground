@@ -3,12 +3,13 @@ import requests
 from typing import Dict, Any
 from .base import BaseScraper
 
+
 class FirecrawlScraper(BaseScraper):
     """Firecrawl API implementation"""
-    
+
     FIRECRAWL_API_ENDPOINT = "https://api.firecrawl.dev/v1/scrape"
-    
-    def __init__(self, timeout: float = 30.0):
+
+    def __init__(self, timeout: float = 180.0):
         self.timeout = timeout
 
     def get_options_schema(self) -> Dict[str, Any]:
@@ -16,40 +17,48 @@ class FirecrawlScraper(BaseScraper):
             "skipTlsVerification": {
                 "type": "boolean",
                 "default": False,
-                "help": "Skip TLS certificate verification when making requests"
+                "help": "Skip TLS certificate verification when making requests",
             },
             "formats": {
                 "type": "select",
-                "options": ["markdown", "html", "rawHtml", "links", "screenshot", "extract", "screenshot@fullPage"],
+                "options": [
+                    "markdown",
+                    "html",
+                    "rawHtml",
+                    "links",
+                    "screenshot",
+                    "extract",
+                    "screenshot@fullPage",
+                ],
                 "default": "markdown",
-                "help": "Formats to include in the output"
+                "help": "Formats to include in the output",
             },
             "onlyMainContent": {
-                "type": "boolean", 
+                "type": "boolean",
                 "default": True,
-                "help": "Only return the main content excluding headers, navs, footers, etc"
+                "help": "Only return the main content excluding headers, navs, footers, etc",
             },
             "waitFor": {
                 "type": "number",
                 "default": 0,
-                "help": "Delay in milliseconds before fetching content"
+                "help": "Delay in milliseconds before fetching content",
             },
             "timeout": {
                 "type": "number",
                 "default": 30000,
-                "help": "Timeout in milliseconds for the request"
+                "help": "Timeout in milliseconds for the request",
             },
             "country": {
                 "type": "string",
                 "default": "US",
-                "help": "ISO 3166-1 alpha-2 country code"
+                "help": "ISO 3166-1 alpha-2 country code",
             },
             "languages": {
                 "type": "array",
                 "items": {"type": "string"},
                 "default": ["en-US"],
-                "help": "Preferred languages for the request"
-            }
+                "help": "Preferred languages for the request",
+            },
         }
 
     def fetch(self, url: str, **options) -> str:
@@ -63,28 +72,28 @@ class FirecrawlScraper(BaseScraper):
             "location": {
                 "country": options.get("country", "US"),
                 "languages": (
-                    options.get("languages", ["en-US"]) 
+                    options.get("languages", ["en-US"])
                     if isinstance(options.get("languages"), list)
                     else ["en-US"]
-                )
-            }
+                ),
+            },
         }
-        
+
         headers = {
             "Authorization": f"Bearer {os.environ['FIRECRAWL_API_KEY']}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
-        
+
         resp = requests.post(
             self.FIRECRAWL_API_ENDPOINT,
             json=payload,
             headers=headers,
-            timeout=self.timeout
+            timeout=self.timeout,
         )
         resp.raise_for_status()
-        
+
         data = resp.json()["data"]
-        
+
         # Return content based on selected format
         format = options.get("formats", "markdown")
         if format == "markdown":

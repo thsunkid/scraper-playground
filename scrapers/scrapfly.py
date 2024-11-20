@@ -13,7 +13,7 @@ class ScrapflyScraper(BaseScraper):
 
     SCRAPFLY_API_ENDPOINT = "https://api.scrapfly.io/scrape"
 
-    def __init__(self, timeout: float = 60):
+    def __init__(self, timeout: float = 160):
         self.timeout = timeout
         self.screenshot_flags = []
 
@@ -113,7 +113,7 @@ class ScrapflyScraper(BaseScraper):
             "timeout": self.timeout * 1000,
             "format": options.get("format", "markdown"),
             "retry": "false",
-            "cache": "true",
+            "cache": "false",
             "cache_ttl": 60 * 60 * 12,  # 12 hr
         }
 
